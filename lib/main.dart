@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:timezone/tzdata.dart';
 import 'package:timezone_calculator/components/timezone_card.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone_calculator/pages/timezone_selector_page.dart';
 
 void main() {
   tz.initializeTimeZones();
@@ -35,6 +38,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late TimeOfDay selectedTime;
+  late Location selectedTimezone;
 
   @override
   void initState() {
@@ -82,9 +86,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 InkWell(
-                  onTap: () {
-                    // select timezone
-                  },
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (context) {
+                    return const TimezoneSelectorPage();
+                  })),
                   child: Text("UTC"),
                 ),
               ],
