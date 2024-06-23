@@ -38,12 +38,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late TimeOfDay selectedTime;
-  late Location selectedTimezone;
+  late tz.Location selectedLocation;
 
   @override
   void initState() {
     super.initState();
     selectedTime = TimeOfDay.now();
+    selectedLocation = tz.getLocation("UTC");
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -86,11 +87,15 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 InkWell(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) {
-                    return const TimezoneSelectorPage();
-                  })),
-                  child: Text("UTC"),
+                  onTap: () async {
+                    final tz.Location location = await Navigator.push(context,
+                        MaterialPageRoute(builder: (context) {
+                      return const TimezoneSelectorPage();
+                    }));
+                    setState(() => selectedLocation = location);
+                  },
+                  child: Text(
+                      "${selectedLocation.currentTimeZone.abbreviation} ${selectedLocation.currentTimeZone.offset.toString()}"),
                 ),
               ],
             ),
