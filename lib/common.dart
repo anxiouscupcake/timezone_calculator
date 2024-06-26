@@ -1,5 +1,4 @@
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
 
 String tzOffsetInHours(int milliseconds) {
   int hours = milliseconds ~/ 3600000;

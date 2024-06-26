@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:timezone/tzdata.dart';
+import 'package:timezone/standalone.dart';
 import 'package:timezone_calculator/common.dart';
 import 'package:timezone_calculator/components/timezone_card.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone_calculator/constants.dart';
 import 'package:timezone_calculator/pages/timezone_selector_page.dart';
 import 'package:timezone_calculator/types/timezone_card_data.dart';
 
@@ -40,6 +41,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late TimeOfDay selectedTime;
+  late tz.TZDateTime pointOfReference;
   late tz.Location selectedLocation;
 
   List<TimezoneCardData> otherTimezones = List.empty(growable: true);
@@ -47,33 +49,42 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    selectedTime = TimeOfDay.now();
     // load selected location from disk
     // if there is none, select UTC+0
     selectedLocation = tz.getLocation("UTC");
     // load other timezones from disk
     // if there are none, create a default one
-    otherTimezones.add(TimezoneCardData(tz.getLocation('America/Detroit')));
+    otherTimezones.add(TimezoneCardData(tz.getLocation('Asia/Tbilisi')));
+
+    selectedTime = TimeOfDay.now();
+    pointOfReference = TZDateTime.now(selectedLocation);
   }
 
   List<Widget> _buildOtherZonesWidgets() {
     List<Widget> widgets = List.empty(growable: true);
     widgets.add(const Text('Other timezones'));
     for (var tzData in otherTimezones) {
-      widgets.add(TimezoneCard(cardData: tzData));
+      widgets.add(
+          TimezoneCard(pointOfReference: pointOfReference, cardData: tzData));
     }
     return widgets;
   }
 
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: selectedTime,
-    );
+        context: context,
+        initialTime: selectedTime,
+        initialEntryMode: TimePickerEntryMode.dial,
+        helpText: "Select a point of reference time");
 
     if (pickedTime != null && pickedTime != selectedTime) {
       setState(() {
         selectedTime = pickedTime;
+        DateTime now = DateTime.now();
+        pointOfReference = TZDateTime.from(
+            DateTime(now.year, now.month, now.day, pickedTime.hour,
+                pickedTime.minute),
+            selectedLocation);
       });
     }
   }
@@ -99,7 +110,7 @@ class _HomePageState extends State<HomePage> {
                 InkWell(
                   onTap: () => _selectTime(context),
                   child: Text(
-                    "${selectedTime.hour.toString()}:${selectedTime.minute.toString()}",
+                    timeFormat24.format(pointOfReference),
                     style: const TextStyle(
                         fontSize: 48, fontWeight: FontWeight.w800),
                   ),
@@ -111,7 +122,15 @@ class _HomePageState extends State<HomePage> {
                       return const TimezoneSelectorPage();
                     }));
                     if (location != null) {
-                      setState(() => selectedLocation = location);
+                      setState(() {
+                        DateTime now = DateTime.now();
+                        selectedLocation = location;
+                        setLocalLocation(location);
+                        pointOfReference = TZDateTime.from(
+                            DateTime(now.year, now.month, now.day,
+                                selectedTime.hour, selectedTime.minute),
+                            selectedLocation);
+                      });
                     }
                   },
                   child: Text(getTzAbbreviationWithHours(selectedLocation)),

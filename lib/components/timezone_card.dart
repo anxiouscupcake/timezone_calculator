@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart';
 import 'package:timezone_calculator/common.dart';
+import 'package:timezone_calculator/constants.dart';
 import 'package:timezone_calculator/types/timezone_card_data.dart';
 
 class TimezoneCard extends StatefulWidget {
-  const TimezoneCard({super.key, required this.cardData});
+  const TimezoneCard(
+      {super.key, required this.cardData, required this.pointOfReference});
 
+  final TZDateTime pointOfReference;
   final TimezoneCardData cardData;
 
   @override
@@ -21,7 +25,8 @@ class _TimezoneCardState extends State<TimezoneCard> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            "??:??",
+            timeFormat24.format(TZDateTime.from(
+                widget.pointOfReference, widget.cardData.location)),
             style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
           ),
           Text(
