@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone_calculator/common.dart';
 
 class TimezoneSelectorPage extends StatefulWidget {
   const TimezoneSelectorPage({super.key});
@@ -19,11 +20,20 @@ class _TimezoneSelectorPageState extends State<TimezoneSelectorPage> {
     ));
     for (var location in tz.timeZoneDatabase.locations.entries) {
       ListTile tile = ListTile(
-        title: Text(location.value.name),
-        subtitle: Text(location.value.currentTimeZone.abbreviation),
+        title: Text(getTzAbbreviationWithHours(location.value)),
+        subtitle: Text(location.value.name),
         onTap: () => Navigator.pop(context, location.value),
       );
-      widgets.add(tile);
+      if (searchString.isNotEmpty &&
+          (location.value.name.toLowerCase().contains(searchString) ||
+              (location.value.currentTimeZone.abbreviation +
+                      getTzAbbreviationWithHours(location.value))
+                  .toLowerCase()
+                  .contains(searchString))) {
+        widgets.add(tile);
+      } else if (searchString.isEmpty) {
+        widgets.add(tile);
+      }
     }
     return widgets;
   }
@@ -46,7 +56,8 @@ class _TimezoneSelectorPageState extends State<TimezoneSelectorPage> {
                 expands: false,
                 decoration: const InputDecoration(
                     hintText: "Search", suffixIcon: Icon(Icons.search)),
-                onChanged: (value) => setState(() => searchString = value),
+                onChanged: (value) =>
+                    setState(() => searchString = value.toLowerCase()),
               ),
             ),
           ],
