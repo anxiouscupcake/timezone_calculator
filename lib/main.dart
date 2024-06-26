@@ -67,7 +67,23 @@ class _HomePageState extends State<HomePage> {
       widgets.add(
           TimezoneCard(pointOfReference: pointOfReference, cardData: tzData));
     }
+    widgets.add(ElevatedButton.icon(
+      onPressed: () async {
+        final location = await _selectLocation();
+        if (location != null) {
+          setState(() => otherTimezones.add(TimezoneCardData(location)));
+        }
+      },
+      label: const Text("Add timezone"),
+      icon: const Icon(Icons.add),
+    ));
     return widgets;
+  }
+
+  Future<Location?> _selectLocation() async {
+    return await Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return const TimezoneSelectorPage();
+    }));
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -117,10 +133,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 InkWell(
                   onTap: () async {
-                    final tz.Location? location = await Navigator.push(context,
-                        MaterialPageRoute(builder: (context) {
-                      return const TimezoneSelectorPage();
-                    }));
+                    final location = await _selectLocation();
                     if (location != null) {
                       setState(() {
                         DateTime now = DateTime.now();

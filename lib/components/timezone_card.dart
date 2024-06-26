@@ -19,22 +19,27 @@ class _TimezoneCardState extends State<TimezoneCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            timeFormat24.format(TZDateTime.from(
-                widget.pointOfReference, widget.cardData.location)),
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
-          ),
-          Text(
-            getTzAbbreviationWithHours(widget.cardData.location),
-            style: const TextStyle(fontWeight: FontWeight.w300),
-          )
-        ],
-      ),
-    );
+        padding: const EdgeInsets.all(2),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  timeFormat24.format(TZDateTime.from(
+                      widget.pointOfReference, widget.cardData.location)),
+                  style: const TextStyle(
+                      fontSize: 32, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  getTzAbbreviationWithHours(widget.cardData.location),
+                  style: const TextStyle(fontWeight: FontWeight.w300),
+                )
+              ],
+            ),
+            Text(widget.cardData.location.name),
+          ],
+        ));
   }
 }
