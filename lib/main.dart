@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -54,7 +56,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     selectedLocation = tz.getLocation("UTC");
-    otherTimezones.add(TimezoneCardData(tz.getLocation('Asia/Tbilisi')));
+    otherTimezones.add(TimezoneCardData('Asia/Tbilisi'));
 
     selectedTime = TimeOfDay.now();
     pointOfReference = TZDateTime.now(selectedLocation);
@@ -64,11 +66,22 @@ class _HomePageState extends State<HomePage> {
     prefs = await SharedPreferences.getInstance();
 
     final String? loadedLocation = prefs.getString(selectedLocationKey);
+    final String? loadedOtherTimezones = prefs.getString(otherTimezonesKey);
 
     if (loadedLocation != null) {
       selectedLocation = tz.getLocation(loadedLocation);
       if (kDebugMode) {
-        print("Loaded pref: $loadedLocation");
+        print("Set $selectedLocationKey to $loadedLocation");
+      }
+    }
+
+    if (loadedOtherTimezones != null) {
+      final decodedList = jsonDecode(loadedOtherTimezones) as List<dynamic>;
+      otherTimezones = decodedList
+          .map((e) => TimezoneCardData.fromJson(e as Map<String, dynamic>))
+          .toList();
+      if (kDebugMode) {
+        print("Set $otherTimezonesKey");
       }
     }
   }
@@ -84,7 +97,10 @@ class _HomePageState extends State<HomePage> {
       onPressed: () async {
         final location = await _selectLocation();
         if (location != null) {
-          setState(() => otherTimezones.add(TimezoneCardData(location)));
+          setState(() {
+            otherTimezones.add(TimezoneCardData(location.name));
+            prefs.setString(otherTimezonesKey, jsonEncode(otherTimezones));
+          });
         }
       },
       label: const Text("Add timezone"),

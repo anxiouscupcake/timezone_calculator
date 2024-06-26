@@ -4,3 +4,4 @@ final DateFormat timeFormat24 = DateFormat("HH:mm");
 
 // Shared prefs keys
 const String selectedLocationKey = "selectedLocation";
+const String otherTimezonesKey = "otherTimezones";
