@@ -1,12 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/standalone.dart';
 import 'package:timezone_calculator/common.dart';
 import 'package:timezone_calculator/components/timezone_card.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone_calculator/constants.dart';
 import 'package:timezone_calculator/pages/timezone_selector_page.dart';
 import 'package:timezone_calculator/types/timezone_card_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   tz.initializeTimeZones();
@@ -40,6 +42,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late SharedPreferences prefs;
+
   late TimeOfDay selectedTime;
   late tz.TZDateTime pointOfReference;
   late tz.Location selectedLocation;
@@ -49,15 +53,24 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // load selected location from disk
-    // if there is none, select UTC+0
     selectedLocation = tz.getLocation("UTC");
-    // load other timezones from disk
-    // if there are none, create a default one
     otherTimezones.add(TimezoneCardData(tz.getLocation('Asia/Tbilisi')));
 
     selectedTime = TimeOfDay.now();
     pointOfReference = TZDateTime.now(selectedLocation);
+  }
+
+  Future<void> loadValues() async {
+    prefs = await SharedPreferences.getInstance();
+
+    final String? loadedLocation = prefs.getString(selectedLocationKey);
+
+    if (loadedLocation != null) {
+      selectedLocation = tz.getLocation(loadedLocation);
+      if (kDebugMode) {
+        print("Loaded pref: $loadedLocation");
+      }
+    }
   }
 
   List<Widget> _buildOtherZonesWidgets() {
@@ -108,57 +121,79 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(appName),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.settings))
-        ],
-      ),
-      body: ListView(
-        scrollDirection: Axis.vertical,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                InkWell(
-                  onTap: () => _selectTime(context),
-                  child: Text(
-                    timeFormat24.format(pointOfReference),
-                    style: const TextStyle(
-                        fontSize: 48, fontWeight: FontWeight.w800),
+        appBar: AppBar(
+          title: const Text(appName),
+          actions: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.settings))
+          ],
+        ),
+        body: FutureBuilder(
+          future: loadValues(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return ListView(
+                scrollDirection: Axis.vertical,
+                children: [
+                  Container(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              InkWell(
+                                onTap: () => _selectTime(context),
+                                child: Text(
+                                  timeFormat24.format(pointOfReference),
+                                  style: const TextStyle(
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  final location = await _selectLocation();
+                                  if (location != null) {
+                                    setState(() {
+                                      DateTime now = DateTime.now();
+                                      selectedLocation = location;
+                                      prefs.setString(
+                                          selectedLocationKey, location.name);
+                                      setLocalLocation(location);
+                                      pointOfReference = TZDateTime.from(
+                                          DateTime(
+                                              now.year,
+                                              now.month,
+                                              now.day,
+                                              selectedTime.hour,
+                                              selectedTime.minute),
+                                          selectedLocation);
+                                    });
+                                  }
+                                },
+                                child: Text(getTzAbbreviationWithHours(
+                                    selectedLocation)),
+                              ),
+                            ],
+                          ),
+                          Text(selectedLocation.name),
+                        ],
+                      )),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      children: _buildOtherZonesWidgets(),
+                    ),
                   ),
-                ),
-                InkWell(
-                  onTap: () async {
-                    final location = await _selectLocation();
-                    if (location != null) {
-                      setState(() {
-                        DateTime now = DateTime.now();
-                        selectedLocation = location;
-                        setLocalLocation(location);
-                        pointOfReference = TZDateTime.from(
-                            DateTime(now.year, now.month, now.day,
-                                selectedTime.hour, selectedTime.minute),
-                            selectedLocation);
-                      });
-                    }
-                  },
-                  child: Text(getTzAbbreviationWithHours(selectedLocation)),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              children: _buildOtherZonesWidgets(),
-            ),
-          ),
-        ],
-      ),
-    );
+                ],
+              );
+            } else {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+          },
+        ));
   }
 }

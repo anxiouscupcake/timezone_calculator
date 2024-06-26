@@ -24,7 +24,6 @@ class _TimezoneCardState extends State<TimezoneCard> {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   timeFormat24.format(TZDateTime.from(
@@ -34,7 +33,7 @@ class _TimezoneCardState extends State<TimezoneCard> {
                 ),
                 Text(
                   getTzAbbreviationWithHours(widget.cardData.location),
-                  style: const TextStyle(fontWeight: FontWeight.w300),
+                  style: const TextStyle(fontWeight: FontWeight.w400),
                 )
               ],
             ),
